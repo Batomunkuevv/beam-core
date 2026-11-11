@@ -1,0 +1,23 @@
+{
+  "name": "batomunkuevv/beam-core",
+  "description": "Инфраструктурные модули BE.AM для WordPress.",
+  "type": "wordpress-muplugin",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "BE.AM"
+    }
+  ],
+  "require": {
+    "php": ">=8.1",
+    "composer/installers": "^2.0"
+  },
+  "extra": {
+    "installer-name": "beam-core"
+  },
+  "config": {
+    "allow-plugins": {
+      "composer/installers": true
+    }
+  }
+}

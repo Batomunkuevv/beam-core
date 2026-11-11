@@ -1,0 +1,36 @@
+/**
+ * Базовая вёрстка login. Цвета — из настроек (inline CSS в AdminBranding).
+ */
+
+body.login #login h1 a {
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 240px;
+  height: 40px;
+  margin: 0 auto 24px;
+}
+
+body.login #loginform,
+body.login #lostpasswordform,
+body.login #registerform {
+  border: 1px solid #d4dce2;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgb(4 19 26 / 8%);
+}
+
+body.login .message,
+body.login .notice,
+body.login .success {
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgb(4 19 26 / 6%);
+}
+
+body.login .button-primary {
+  border-radius: 4px;
+  color: #ffffff;
+}
+
+body.login .language-switcher .button {
+  color: #ffffff;
+}

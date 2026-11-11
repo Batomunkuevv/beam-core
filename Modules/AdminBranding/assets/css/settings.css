@@ -1,0 +1,112 @@
+.beam-branding-settings {
+  max-width: 960px;
+}
+
+.beam-branding-settings .form-table th {
+  width: 220px;
+}
+
+.beam-branding-color {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.beam-branding-color__picker {
+  width: 48px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+.beam-branding-color__input {
+  width: 112px;
+}
+
+.beam-branding-logo {
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+}
+
+.beam-branding-logo__preview {
+  display: grid;
+  place-items: center;
+  min-height: 96px;
+  padding: 24px;
+  border: 1px solid #dcdcde;
+  border-radius: 8px;
+  background: var(--beam-branding-login-bg, #f0f0f1);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 80%);
+}
+
+.beam-branding-logo__preview.is-empty {
+  border-style: dashed;
+  color: #d63638;
+}
+
+.beam-branding-logo__image {
+  display: block;
+  max-width: 240px;
+  max-height: 40px;
+  width: auto;
+  height: auto;
+}
+
+.beam-branding-logo__placeholder {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.beam-branding-logo__placeholder .dashicons {
+  width: 32px;
+  height: 32px;
+  font-size: 32px;
+  opacity: 0.72;
+}
+
+.beam-branding-logo__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.beam-branding-logo__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 4px;
+  background: #ffffff;
+  border: 1px solid #dcdcde;
+  color: #3c434a;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.beam-branding-logo__status.is-custom {
+  background: #2271b1;
+  border-color: #2271b1;
+  color: #ffffff;
+}
+
+.beam-branding-logo__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.beam-branding-logo__hint {
+  margin: 0;
+  color: #646970;
+  font-size: 13px;
+  line-height: 1.5;
+}
