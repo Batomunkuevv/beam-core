@@ -240,7 +240,7 @@ final class SettingsPage
             <?php self::renderXmlrpcStatus($xmlrpc, $formAction); ?>
 
             <h2>Лимит попыток входа</h2>
-            <p class="description">Модуль сам лимит не включает, только проверяет, отвечает ли адрес входа кодом 429 или 503.</p>
+            <p class="description">Модуль сам лимит не включает. По кнопке проверяется, отвечает ли адрес входа кодом 429 или 503. Неудачные входы пишутся в syslog (ident <code>beam-wp</code>, facility auth): при неверном пароле WordPress отвечает 200, и по access-логу nginx fail2ban их не увидит. Отключить запись: <code>define('BEAM_DISABLE_LOGIN_FAIL_LOG', true);</code>.</p>
             <?php self::renderLoginLimitStatus($loginLimit, $formAction, $hideActive); ?>
         </div>
         <?php
@@ -313,7 +313,7 @@ final class SettingsPage
                 <p><strong>fail2ban</strong></p>
                 <pre class="beam-core-snippet"><code><?= esc_html(LoginLimitStatus::fail2banSnippet()) ?></code></pre>
             <?php endif; ?>
-            <p class="description">Проверка не запускается сама: по кнопке отправляется несколько быстрых POST с неверными данными на адрес входа. Это может задеть fail2ban, если в <code>ignoreip</code> нет адреса сервера. Результат кешируется на час.</p>
+            <p class="description">Проверка не запускается сама: по кнопке отправляется несколько быстрых POST с неверными данными на адрес входа. Это может задеть fail2ban (в том числе по syslog), если в <code>ignoreip</code> нет адреса сервера. Результат кешируется на час.</p>
             <?php if ($checked !== '') : ?>
                 <p class="description">Проверено: <?= esc_html($checked) ?><?php if ($limit['attempts'] > 0) : ?>, запросов: <?= esc_html((string) $limit['attempts']) ?><?php endif; ?>.</p>
             <?php endif; ?>

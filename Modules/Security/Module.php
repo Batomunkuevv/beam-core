@@ -46,6 +46,7 @@ final class Module
         require_once __DIR__ . '/HideLogin.php';
         require_once __DIR__ . '/XmlrpcStatus.php';
         require_once __DIR__ . '/LoginLimitStatus.php';
+        require_once __DIR__ . '/LoginFailLog.php';
         require_once __DIR__ . '/SettingsPage.php';
 
         if (! ModuleRegistry::is_enabled('security')) {
@@ -53,5 +54,6 @@ final class Module
         }
 
         Security::register();
+        LoginFailLog::register();
     }
 }

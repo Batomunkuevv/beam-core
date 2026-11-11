@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1
+
+- Неудачный вход пишется в syslog (facility `auth`, ident `beam-wp`), чтобы fail2ban мог банить по этим записям: при неверном пароле WordPress отвечает HTTP 200, и фильтр по кодам 401/403 в access-логе nginx такие попытки не видит.
+- Сниппет fail2ban обновлён под `/var/log/auth.log`. Лимит 429 в nginx остаётся отдельным необязательным правилом.
+- В сниппетах убран лишний пробел в начале блока. Запись можно отключить константой `BEAM_DISABLE_LOGIN_FAIL_LOG` или фильтром `beam_security_log_login_failures`. IP берётся из `REMOTE_ADDR`, подмена — фильтром `beam_security_client_ip`.
+
 ## 2.0.0
 
 - Встроены поля на основе Advanced Custom Fields PRO 6.7.0.1 («Поля» / BE.AM Fields, каталог `vendor-acf/`). Это собственная наработка: из апстрима не обновляется. Функции, классы, хуки `acf/*`, ключи `field_*`/`group_*`, формат `acf-json` и опции в базе не переименовывались.

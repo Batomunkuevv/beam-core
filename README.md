@@ -91,6 +91,8 @@ add_filter(
 - `beam_security_login_slug` — слаг скрытого адреса входа.
 - `beam_security_xmlrpc_sslverify` — проверка TLS при запросе статуса XML-RPC. По умолчанию `true`, для локальных доменов (`*.ddev.site`, `*.local`, `localhost` и аналогичных) — `false`.
 - `beam_security_login_limit_sslverify` — то же для проверки лимита попыток входа.
+- `beam_security_log_login_failures` — `false`, чтобы не писать неудачные входы в syslog.
+- `beam_security_client_ip` — IP клиента для журнала неудачных входов. По умолчанию `REMOTE_ADDR`; заголовкам вроде `X-Forwarded-For` модуль не доверяет.
 - `beam_disable_comments_excluded_post_types` — типы записей, у которых комментарии остаются включёнными. По умолчанию `product`, если активен WooCommerce или зарегистрирован этот тип.
 
 Тема или mu-plugin сайта передают свои значения через эти фильтры. В самом пакете нет привязки к конкретному проекту.
@@ -152,7 +154,7 @@ add_filter('beam_disable_comments_excluded_post_types', static fn (): array => [
 
 XML-RPC модуль не отключает: на вкладке проверяется доступность (`system.listMethods`, кеш около часа). Если эндпоинт открыт, его лучше закрыть в nginx. Сниппет выводит `location = /xmlrpc.php` и, если WordPress в подкаталоге (например Bedrock `/wp/`), также `location = /wp/xmlrpc.php`.
 
-Лимит попыток входа модуль сам не включает. На вкладке есть готовые сниппеты nginx (`limit_req`) и fail2ban для текущего публичного адреса входа. Если скрытие входа включено, лимит в nginx нужно ставить на этот адрес, а не на `wp-login.php`. Проверка по кнопке делает несколько быстрых POST с неверными данными и может задеть fail2ban, если в `ignoreip` нет адреса сервера; сама по загрузке страницы она не запускается.
+Лимит попыток входа модуль сам не включает. На вкладке есть готовые сниппеты nginx (`limit_req`) и fail2ban. Если скрытие входа включено, лимит в nginx нужно ставить на этот адрес, а не на `wp-login.php`. При неверном пароле WordPress отвечает HTTP 200, поэтому fail2ban смотрит не access-лог nginx, а запись в syslog: facility `auth`, ident `beam-wp`, строка вида `Authentication failure for <user> from <ip>`. Обычно это `/var/log/auth.log` (на RHEL — `/var/log/secure`). IP берётся из `REMOTE_ADDR`, подменить его можно фильтром `beam_security_client_ip`. Отключить запись: `define('BEAM_DISABLE_LOGIN_FAIL_LOG', true);` или фильтр `beam_security_log_login_failures`. Сниппет с баном по 429 от nginx — отдельно и по желанию. Проверка по кнопке делает несколько быстрых POST с неверными данными и может задеть fail2ban, если в `ignoreip` нет адреса сервера; сама по загрузке страницы она не запускается.
 
 ## Поля
 

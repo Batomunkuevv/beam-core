@@ -58,44 +58,73 @@ final class LoginLimitStatus
         $script = $isPhp
             ? '$document_root$fastcgi_script_name'
             : '$document_root/index.php';
-        $hint = $isPhp
-            ? '# в блоке server (fastcgi_pass и SCRIPT_FILENAME подставьте свои):'
-            : "# в блоке server (fastcgi_pass подставьте свой).\n# Лимит ставьте на публичный адрес входа, а не на wp-login.php:\n# nginx видит исходный URL, а wp-login.php подключается уже в PHP.";
+        $lines = [
+            '# в блоке http:',
+            'limit_req_zone $binary_remote_addr zone=wp_login:10m rate=1r/s;',
+            '',
+        ];
 
-        return <<<SNIPPET
-# в блоке http:
-limit_req_zone \$binary_remote_addr zone=wp_login:10m rate=1r/s;
+        if ($isPhp) {
+            $lines[] = '# в блоке server (fastcgi_pass и SCRIPT_FILENAME подставьте свои):';
+        } else {
+            $lines[] = '# в блоке server (fastcgi_pass подставьте свой).';
+            $lines[] = '# Лимит ставьте на публичный адрес входа, а не на wp-login.php:';
+            $lines[] = '# nginx видит исходный URL, а wp-login.php подключается уже в PHP.';
+        }
 
-{$hint}
-location = {$path} {
-    limit_req zone=wp_login burst=5 nodelay;
-    limit_req_status 429;
-    include fastcgi_params;
-    fastcgi_param SCRIPT_FILENAME {$script};
-    fastcgi_pass unix:/run/php/php-fpm.sock;
-}
-SNIPPET;
+        $lines[] = 'location = ' . $path . ' {';
+        $lines[] = '    limit_req zone=wp_login burst=5 nodelay;';
+        $lines[] = '    limit_req_status 429;';
+        $lines[] = '    include fastcgi_params;';
+        $lines[] = '    fastcgi_param SCRIPT_FILENAME ' . $script . ';';
+        $lines[] = '    fastcgi_pass unix:/run/php/php-fpm.sock;';
+        $lines[] = '}';
+
+        return implode("\n", $lines);
     }
 
     public static function fail2banSnippet(): string
     {
         $path = preg_quote(self::loginPath(), '#');
 
-        return <<<SNIPPET
-# /etc/fail2ban/filter.d/wordpress-login.conf
-[Definition]
-failregex = ^<HOST> .+ "(GET|POST) {$path}(?:/|\\?| )\\S* HTTP/[\\d.]+" (?:401|403|404|429)
-ignoreregex =
+        $lines = [
+            '# /etc/fail2ban/filter.d/wordpress-login.conf',
+            '[INCLUDES]',
+            'before = common.conf',
+            '',
+            '[Definition]',
+            '_daemon = beam-wp',
+            'failregex = ^%(__prefix_line)sAuthentication failure for .* from <HOST>\s*$',
+            'ignoreregex =',
+            '',
+            '# /etc/fail2ban/jail.local',
+            '# Debian/Ubuntu: /var/log/auth.log; RHEL: /var/log/secure',
+            '[wordpress-login]',
+            'enabled = true',
+            'filter = wordpress-login',
+            'logpath = /var/log/auth.log',
+            'backend = auto',
+            'maxretry = 5',
+            'findtime = 60',
+            'bantime = 3600',
+            '',
+            '# опционально: 429 от nginx limit_req',
+            '# /etc/fail2ban/filter.d/wordpress-login-limit.conf',
+            '# [Definition]',
+            '# failregex = ^<HOST> .+ "(GET|POST) ' . $path . '(?:/|\\?| )\\S* HTTP/[\\d.]+" 429',
+            '# ignoreregex =',
+            '#',
+            '# /etc/fail2ban/jail.local',
+            '# [wordpress-login-limit]',
+            '# enabled = true',
+            '# filter = wordpress-login-limit',
+            '# logpath = /var/log/nginx/access.log',
+            '# maxretry = 5',
+            '# findtime = 60',
+            '# bantime = 3600',
+        ];
 
-# /etc/fail2ban/jail.local
-[wordpress-login]
-enabled = true
-filter = wordpress-login
-logpath = /var/log/nginx/access.log
-maxretry = 5
-findtime = 60
-bantime = 3600
-SNIPPET;
+        return implode("\n", $lines);
     }
 
     /**
