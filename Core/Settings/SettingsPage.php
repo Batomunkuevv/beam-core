@@ -105,12 +105,6 @@ final class SettingsPage
 		<div class="wrap beam-core-settings">
 			<h1><?= esc_html(get_admin_page_title()) ?></h1>
 
-			<?php settings_errors('beam_core'); ?>
-			<?php settings_errors('beam_smtp'); ?>
-			<?php settings_errors('beam_admin_branding'); ?>
-			<?php settings_errors('beam_favicon'); ?>
-			<?php settings_errors('beam_security'); ?>
-
 			<nav class="nav-tab-wrapper beam-core-settings__tabs" aria-label="Разделы BE.AM Core">
 				<?php foreach ($tabs as $slug => $label) : ?>
 					<a
@@ -292,7 +286,10 @@ final class SettingsPage
         require_once BEAM_CORE_DIR . '/Modules/Favicon/Generator.php';
         require_once BEAM_CORE_DIR . '/Modules/Favicon/SettingsPage.php';
         require_once BEAM_CORE_DIR . '/Modules/Security/Config.php';
+        require_once BEAM_CORE_DIR . '/Modules/Security/Security.php';
+        require_once BEAM_CORE_DIR . '/Modules/Security/HideLogin.php';
         require_once BEAM_CORE_DIR . '/Modules/Security/XmlrpcStatus.php';
+        require_once BEAM_CORE_DIR . '/Modules/Security/LoginLimitStatus.php';
         require_once BEAM_CORE_DIR . '/Modules/Security/SettingsPage.php';
     }
 

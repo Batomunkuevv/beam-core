@@ -22,8 +22,56 @@ final class DisableComments
         add_action('wp_loaded', [self::class, 'registerContextHooks']);
         add_action('enqueue_block_editor_assets', [self::class, 'unregisterLatestCommentsBlock']);
         add_filter('xmlrpc_methods', [self::class, 'disableXmlRpcComments']);
-        add_filter('comments_array', '__return_empty_array', 20);
+        add_filter('comments_array', [self::class, 'filterCommentsArray'], 20, 2);
         add_filter('rest_pre_insert_comment', [self::class, 'blockRestCommentCreation'], 10, 2);
+    }
+
+    /**
+     * Post types whose comments stay enabled. By default this includes WooCommerce
+     * product reviews (`product`) when WooCommerce is present.
+     *
+     * @return list<string>
+     */
+    public static function excludedPostTypes(): array
+    {
+        $types = [];
+        if (class_exists('WooCommerce') || post_type_exists('product')) {
+            $types[] = 'product';
+        }
+
+        $filtered = apply_filters('beam_disable_comments_excluded_post_types', $types);
+        if (! is_array($filtered)) {
+            return $types;
+        }
+
+        $clean = [];
+        foreach ($filtered as $type) {
+            if (is_string($type) && $type !== '') {
+                $clean[$type] = $type;
+            }
+        }
+
+        return array_values($clean);
+    }
+
+    public static function shouldDisableForPostType(string $postType): bool
+    {
+        if ($postType === '') {
+            return true;
+        }
+
+        return ! in_array($postType, self::excludedPostTypes(), true);
+    }
+
+    public static function shouldDisableForPostId(int $postId): bool
+    {
+        if ($postId <= 0) {
+            return true;
+        }
+
+        $postType = get_post_type($postId);
+
+        return self::shouldDisableForPostType(is_string($postType) ? $postType : '');
     }
 
     public static function registerContextHooks(): void
@@ -57,7 +105,11 @@ final class DisableComments
 
     public static function blockCommentFeeds(): void
     {
-        if (!is_comment_feed()) {
+        if (! is_comment_feed()) {
+            return;
+        }
+
+        if (is_singular() && ! self::shouldDisableForPostId((int) get_the_ID())) {
             return;
         }
 
@@ -70,9 +122,13 @@ final class DisableComments
 
     public static function removeAdminBarComments(): void
     {
+        if (self::excludedPostTypes() !== []) {
+            return;
+        }
+
         remove_action('admin_bar_menu', 'wp_admin_bar_comments_menu', 60);
 
-        if (!is_multisite()) {
+        if (! is_multisite()) {
             return;
         }
 
@@ -81,7 +137,7 @@ final class DisableComments
 
     public static function removeNetworkCommentLinks(\WP_Admin_Bar $adminBar): void
     {
-        if (!is_user_logged_in()) {
+        if (! is_user_logged_in()) {
             return;
         }
 
@@ -135,12 +191,34 @@ JS,
     }
 
     /**
-     * @param \WP_Comment|array<string, mixed> $preparedComment
-     * @param \WP_REST_Request $request
-     * @return \WP_Error
+     * @param list<\WP_Comment> $comments
+     * @return list<\WP_Comment>
      */
-    public static function blockRestCommentCreation($preparedComment, $request): \WP_Error
+    public static function filterCommentsArray(array $comments, $postId): array
     {
+        return self::shouldDisableForPostId((int) $postId) ? [] : $comments;
+    }
+
+    /**
+     * @param \WP_Comment|array<string, mixed>|\WP_Error $preparedComment
+     * @param \WP_REST_Request $request
+     * @return \WP_Comment|array<string, mixed>|\WP_Error
+     */
+    public static function blockRestCommentCreation($preparedComment, $request)
+    {
+        unset($request);
+
+        $postId = 0;
+        if ($preparedComment instanceof \WP_Comment) {
+            $postId = (int) $preparedComment->comment_post_ID;
+        } elseif (is_array($preparedComment) && isset($preparedComment['comment_post_ID'])) {
+            $postId = (int) $preparedComment['comment_post_ID'];
+        }
+
+        if ($postId > 0 && ! self::shouldDisableForPostId($postId)) {
+            return $preparedComment;
+        }
+
         return new \WP_Error(
             'rest_comment_disabled',
             __('Комментарии отключены.', 'disable-comments'),
@@ -160,17 +238,66 @@ JS,
     private static function registerFrontendHooks(): void
     {
         add_action('template_redirect', [self::class, 'disableCommentTemplate']);
-        add_filter('comments_open', '__return_false', 20);
-        add_filter('pings_open', '__return_false', 20);
-        add_filter('post_comments_feed_link', '__return_false');
+        add_filter('comments_open', [self::class, 'filterCommentsOpen'], 20, 2);
+        add_filter('pings_open', [self::class, 'filterPingsOpen'], 20, 2);
+        add_filter('post_comments_feed_link', [self::class, 'filterPostCommentsFeedLink'], 10, 2);
         add_filter('comments_link_feed', '__return_false');
-        add_filter('comment_link', '__return_empty_string');
-        add_filter('get_comments_number', '__return_zero');
+        add_filter('comment_link', [self::class, 'filterCommentLink'], 10, 2);
+        add_filter('get_comments_number', [self::class, 'filterCommentsNumber'], 20, 2);
         add_filter('feed_links_show_comments_feed', '__return_false');
+    }
+
+    public static function filterCommentsOpen(bool $open, $postId): bool
+    {
+        return self::shouldDisableForPostId((int) $postId) ? false : $open;
+    }
+
+    public static function filterPingsOpen(bool $open, $postId): bool
+    {
+        return self::shouldDisableForPostId((int) $postId) ? false : $open;
+    }
+
+    /**
+     * @param mixed $link
+     * @return mixed
+     */
+    public static function filterPostCommentsFeedLink($link, $postId)
+    {
+        return self::shouldDisableForPostId((int) $postId) ? false : $link;
+    }
+
+    /**
+     * @param mixed $link
+     * @param mixed $comment
+     * @return mixed
+     */
+    public static function filterCommentLink($link, $comment)
+    {
+        $postId = 0;
+        if ($comment instanceof \WP_Comment) {
+            $postId = (int) $comment->comment_post_ID;
+        } elseif (is_object($comment) && isset($comment->comment_post_ID)) {
+            $postId = (int) $comment->comment_post_ID;
+        }
+
+        return $postId > 0 && ! self::shouldDisableForPostId($postId) ? $link : '';
+    }
+
+    /**
+     * @param int|string $count
+     * @return int|string
+     */
+    public static function filterCommentsNumber($count, $postId)
+    {
+        return self::shouldDisableForPostId((int) $postId) ? 0 : $count;
     }
 
     public static function removeAdminMenus(): void
     {
+        if (self::excludedPostTypes() !== []) {
+            return;
+        }
+
         global $pagenow;
 
         if (in_array($pagenow, self::BLOCKED_ADMIN_PAGES, true)) {
@@ -187,11 +314,19 @@ JS,
 
     public static function removeDashboardWidgets(): void
     {
+        if (self::excludedPostTypes() !== []) {
+            return;
+        }
+
         remove_meta_box('dashboard_recent_comments', 'dashboard', 'normal');
     }
 
     public static function printAdminStyles(): void
     {
+        if (self::excludedPostTypes() !== []) {
+            return;
+        }
+
         echo '<style>
             #dashboard_right_now .comment-count,
             #dashboard_right_now .comment-mod-count,
@@ -205,7 +340,7 @@ JS,
 
     public static function disableCommentTemplate(): void
     {
-        if (!is_singular()) {
+        if (! is_singular() || ! self::shouldDisableForPostId((int) get_the_ID())) {
             return;
         }
 
@@ -219,6 +354,10 @@ JS,
         $postTypes = get_post_types([], 'names');
 
         foreach ($postTypes as $postType) {
+            if (! self::shouldDisableForPostType((string) $postType)) {
+                continue;
+            }
+
             if (post_type_supports($postType, 'comments')) {
                 remove_post_type_support($postType, 'comments');
             }

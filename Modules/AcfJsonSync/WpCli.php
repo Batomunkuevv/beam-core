@@ -18,7 +18,7 @@ final class WpCli
     public static function sync(): void
     {
         if (! function_exists('acf_get_local_json_files')) {
-            \WP_CLI::error('ACF не активен.');
+            \WP_CLI::error('Группы полей не загружены.');
         }
 
         $postType = 'acf-field-group';

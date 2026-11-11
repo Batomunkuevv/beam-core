@@ -17,6 +17,7 @@ final class Plugin
         }
 
         self::$registered = true;
+        self::forgetRemovedModules();
 
         foreach (ModuleRegistry::filtered_modules() as $class) {
             if (class_exists($class) && method_exists($class, 'register')) {
@@ -26,6 +27,22 @@ final class Plugin
 
         if (is_admin()) {
             SettingsPage::register();
+            DuplicateNotice::register();
         }
+    }
+
+    private static function forgetRemovedModules(): void
+    {
+        $disabled = get_option(ModuleRegistry::OPTION_DISABLED, []);
+
+        if (! is_array($disabled) || ! in_array('acfOffline', $disabled, true)) {
+            return;
+        }
+
+        update_option(
+            ModuleRegistry::OPTION_DISABLED,
+            array_values(array_diff($disabled, ['acfOffline'])),
+            false,
+        );
     }
 }

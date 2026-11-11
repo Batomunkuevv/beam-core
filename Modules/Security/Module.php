@@ -25,13 +25,12 @@ final class Module
             return;
         }
 
-        if (! Config::isEnabled('disallow_file_edit')) {
-            return;
-        }
-
-        if (! defined('DISALLOW_FILE_EDIT')) {
+        if (Config::isEnabled('disallow_file_edit') && ! defined('DISALLOW_FILE_EDIT')) {
             define('DISALLOW_FILE_EDIT', true);
         }
+
+        require_once __DIR__ . '/HideLogin.php';
+        HideLogin::bootstrap();
     }
 
     public static function register(): void
@@ -44,7 +43,9 @@ final class Module
 
         require_once __DIR__ . '/Config.php';
         require_once __DIR__ . '/Security.php';
+        require_once __DIR__ . '/HideLogin.php';
         require_once __DIR__ . '/XmlrpcStatus.php';
+        require_once __DIR__ . '/LoginLimitStatus.php';
         require_once __DIR__ . '/SettingsPage.php';
 
         if (! ModuleRegistry::is_enabled('security')) {

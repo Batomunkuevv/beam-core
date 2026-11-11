@@ -39,9 +39,27 @@ final class XmlrpcStatus
         return is_string($path) && $path !== '' ? $path : '/xmlrpc.php';
     }
 
+    /**
+     * @return list<string>
+     */
+    public static function xmlrpcPaths(): array
+    {
+        $paths = [self::xmlrpcPath()];
+        if (! in_array('/xmlrpc.php', $paths, true)) {
+            array_unshift($paths, '/xmlrpc.php');
+        }
+
+        return array_values(array_unique($paths));
+    }
+
     public static function nginxSnippet(): string
     {
-        return 'location = ' . self::xmlrpcPath() . ' { deny all; }';
+        $lines = [];
+        foreach (self::xmlrpcPaths() as $path) {
+            $lines[] = 'location = ' . $path . ' { deny all; }';
+        }
+
+        return implode("\n", $lines);
     }
 
     /**
@@ -56,7 +74,7 @@ final class XmlrpcStatus
             [
                 'timeout' => 3,
                 'redirection' => 0,
-                'sslverify' => apply_filters('beam_security_xmlrpc_sslverify', false),
+                'sslverify' => Security::sslVerify($url, 'beam_security_xmlrpc_sslverify'),
                 'headers' => [
                     'Content-Type' => 'text/xml',
                 ],

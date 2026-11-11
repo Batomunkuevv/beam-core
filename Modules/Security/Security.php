@@ -23,7 +23,7 @@ final class Security
 
     public static function blockAuthorArchives(): void
     {
-        if (is_admin() || is_user_logged_in()) {
+        if (is_admin() || self::canAccessUsers()) {
             return;
         }
 
@@ -55,7 +55,7 @@ final class Security
      */
     public static function filterRestEndpoints(array $endpoints): array
     {
-        if (is_user_logged_in()) {
+        if (self::canAccessUsers()) {
             return $endpoints;
         }
 
@@ -74,7 +74,7 @@ final class Security
      */
     public static function blockUsersRest(mixed $result, \WP_REST_Server $server, \WP_REST_Request $request): mixed
     {
-        if ($result !== null || is_user_logged_in()) {
+        if ($result !== null || self::canAccessUsers()) {
             return $result;
         }
 
@@ -85,7 +85,7 @@ final class Security
         return new \WP_Error(
             'rest_forbidden',
             'Доступ запрещён.',
-            ['status' => 401]
+            ['status' => is_user_logged_in() ? 403 : 401]
         );
     }
 
@@ -112,6 +112,46 @@ final class Security
     public static function genericLoginError(string $error): string
     {
         return 'Неверный логин или пароль';
+    }
+
+
+    public static function usersCapability(): string
+    {
+        $capability = apply_filters('beam_security_users_capability', 'list_users');
+
+        return is_string($capability) && $capability !== '' ? $capability : 'list_users';
+    }
+
+    public static function canAccessUsers(): bool
+    {
+        return current_user_can(self::usersCapability());
+    }
+
+    public static function sslVerify(string $url, string $filter): bool
+    {
+        $host = wp_parse_url($url, PHP_URL_HOST);
+        $default = true;
+        if (is_string($host) && $host !== '' && self::isLocalOrDevHost($host)) {
+            $default = false;
+        }
+
+        return (bool) apply_filters($filter, $default, $url);
+    }
+
+    private static function isLocalOrDevHost(string $host): bool
+    {
+        $host = strtolower($host);
+        if (in_array($host, ['localhost', '127.0.0.1', '::1'], true)) {
+            return true;
+        }
+
+        foreach (['.ddev.site', '.lndo.site', '.test', '.local', '.localhost'] as $suffix) {
+            if (str_ends_with($host, $suffix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static function isUsersRoute(string $route): bool

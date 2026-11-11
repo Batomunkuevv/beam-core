@@ -46,7 +46,7 @@ final class JsonSync
         $directory = get_stylesheet_directory() . '/' . self::JSON_DIR;
 
         /**
-         * Allows projects without a theme-owned schema to move ACF Local JSON.
+         * Allows projects without a theme-owned schema to move the field JSON directory.
          *
          * @param string $directory Absolute directory path.
          */

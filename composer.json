@@ -2,7 +2,7 @@
   "name": "batomunkuevv/beam-core",
   "description": "Инфраструктурные модули BE.AM для WordPress.",
   "type": "wordpress-muplugin",
-  "license": "proprietary",
+  "license": "GPL-2.0-or-later",
   "authors": [
     {
       "name": "BE.AM"

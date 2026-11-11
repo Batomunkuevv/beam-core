@@ -1,8 +1,10 @@
 <?php
 
+namespace Beam\Core\Modules\Smtp;
+
 defined('ABSPATH') || exit;
 
-final class BeamSmtpConfig
+final class Config
 {
     public const OPTION_KEY = 'beam_smtp_settings';
 
@@ -68,9 +70,16 @@ final class BeamSmtpConfig
         return $settings;
     }
 
-    public static function get(string $key): mixed
+    /**
+     * @param string|null $key If omitted, returns all settings.
+     * @return ($key is null ? array<string, mixed> : mixed)
+     */
+    public static function get(?string $key = null): mixed
     {
         $settings = self::get_all();
+        if ($key === null || $key === '') {
+            return $settings;
+        }
 
         return $settings[$key] ?? self::DEFAULTS[$key] ?? null;
     }
@@ -169,3 +178,5 @@ final class BeamSmtpConfig
         return in_array($value, ['none', 'ssl', 'tls'], true) ? $value : 'tls';
     }
 }
+
+class_alias(Config::class, 'BeamSmtpConfig');

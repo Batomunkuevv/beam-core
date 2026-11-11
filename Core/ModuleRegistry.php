@@ -53,17 +53,10 @@ final class ModuleRegistry
                 'has_settings' => false,
             ],
             'acfJsonSync'     => [
-                'label'       => 'ACF JSON Sync',
+                'label'       => 'JSON групп полей',
                 'tab'         => 'acf-json-sync',
                 'class'       => \Beam\Core\Modules\AcfJsonSync\Module::class,
-                'description' => 'Синхронизация групп полей ACF через JSON в теме или по указанному пути.',
-                'has_settings' => false,
-            ],
-            'acfOffline'      => [
-                'label'       => 'ACF Offline',
-                'tab'         => 'acf-offline',
-                'class'       => \Beam\Core\Modules\AcfOffline\Module::class,
-                'description' => 'Отключает обращения ACF Pro к серверу лицензий. Обновление — заменой папки плагина.',
+                'description' => 'Синхронизация групп полей через JSON в теме или по указанному пути.',
                 'has_settings' => false,
             ],
             'breadcrumbs'     => [
@@ -91,7 +84,7 @@ final class ModuleRegistry
                 'label'       => 'Безопасность',
                 'tab'         => 'security',
                 'class'       => \Beam\Core\Modules\Security\Module::class,
-                'description' => 'Отключение редактора файлов, скрытие логинов и проверка XML-RPC.',
+                'description' => 'Отключение редактора файлов, скрытие логинов и адреса входа, проверка XML-RPC и лимита попыток входа.',
                 'has_settings' => true,
             ],
         ];

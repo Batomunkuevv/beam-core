@@ -56,7 +56,7 @@ final class Tags
             return $tags;
         }
 
-        $hasDefaults = $defaults['svg'] !== '' || $defaults['icon_32'] !== '' || $defaults['apple_touch'] !== '';
+        $hasDefaults = self::hasDefaultIcons($defaults);
         if (! $hasDefaults) {
             return [];
         }
@@ -70,7 +70,11 @@ final class Tags
         if ($defaults['apple_touch'] !== '') {
             $tags[] = self::link('apple-touch-icon', $defaults['apple_touch'], ['sizes' => '180x180']);
         }
-        if ($defaults['icon_192'] !== '' && $defaults['icon_512'] !== '') {
+        if ($defaults['icon_192'] !== '') {
+            $tags[] = self::link('icon', $defaults['icon_192'], ['sizes' => '192x192', 'type' => 'image/png']);
+        }
+        if ($defaults['icon_512'] !== '') {
+            $tags[] = self::link('icon', $defaults['icon_512'], ['sizes' => '512x512', 'type' => 'image/png']);
         }
         if ($defaults['ico'] !== '') {
             $tags[] = self::link('icon', $defaults['ico'], ['sizes' => 'any']);
@@ -88,9 +92,20 @@ final class Tags
             return true;
         }
 
-        $defaults = Config::defaults();
+        return self::hasDefaultIcons(Config::defaults());
+    }
 
-        return $defaults['svg'] !== '' || $defaults['icon_32'] !== '' || $defaults['apple_touch'] !== '';
+    /**
+     * @param array<string, string> $defaults
+     */
+    private static function hasDefaultIcons(array $defaults): bool
+    {
+        return $defaults['svg'] !== ''
+            || $defaults['icon_32'] !== ''
+            || $defaults['apple_touch'] !== ''
+            || $defaults['icon_192'] !== ''
+            || $defaults['icon_512'] !== ''
+            || $defaults['ico'] !== '';
     }
 
     /**
