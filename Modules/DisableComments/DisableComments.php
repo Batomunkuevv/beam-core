@@ -28,14 +28,14 @@ final class DisableComments
 
     /**
      * Post types whose comments stay enabled. By default this includes WooCommerce
-     * product reviews (`product`) when WooCommerce is present.
+     * product reviews (`product`) when WooCommerce is present and reviews are enabled.
      *
      * @return list<string>
      */
     public static function excludedPostTypes(): array
     {
         $types = [];
-        if (class_exists('WooCommerce') || post_type_exists('product')) {
+        if (self::wooCommerceReviewsEnabled()) {
             $types[] = 'product';
         }
 
@@ -52,6 +52,15 @@ final class DisableComments
         }
 
         return array_values($clean);
+    }
+
+    private static function wooCommerceReviewsEnabled(): bool
+    {
+        if (! class_exists('WooCommerce') && ! post_type_exists('product')) {
+            return false;
+        }
+
+        return get_option('woocommerce_enable_reviews', 'yes') === 'yes';
     }
 
     public static function shouldDisableForPostType(string $postType): bool
