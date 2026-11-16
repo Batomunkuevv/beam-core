@@ -249,9 +249,9 @@ JS,
         add_action('template_redirect', [self::class, 'disableCommentTemplate']);
         add_filter('comments_open', [self::class, 'filterCommentsOpen'], 20, 2);
         add_filter('pings_open', [self::class, 'filterPingsOpen'], 20, 2);
-        add_filter('post_comments_feed_link', [self::class, 'filterPostCommentsFeedLink'], 10, 2);
+        add_filter('post_comments_feed_link', [self::class, 'filterPostCommentsFeedLink']);
         add_filter('comments_link_feed', '__return_false');
-        add_filter('comment_link', [self::class, 'filterCommentLink'], 10, 2);
+        add_filter('comment_link', [self::class, 'filterCommentLink']);
         add_filter('get_comments_number', [self::class, 'filterCommentsNumber'], 20, 2);
         add_filter('feed_links_show_comments_feed', '__return_false');
     }
@@ -267,27 +267,33 @@ JS,
     }
 
     /**
+     * `post_comments_feed_link` passes only the URL, so the post is taken from the
+     * current loop: feed links are printed for the post being displayed.
+     *
      * @param mixed $link
      * @return mixed
      */
-    public static function filterPostCommentsFeedLink($link, $postId)
+    public static function filterPostCommentsFeedLink($link)
     {
-        return self::shouldDisableForPostId((int) $postId) ? false : $link;
+        $post = get_post();
+        if (! $post instanceof \WP_Post) {
+            return $link;
+        }
+
+        return self::shouldDisableForPostId($post->ID) ? false : $link;
     }
 
     /**
+     * `comment_link` passes only the URL (comment feeds); the comment is the one
+     * in the current comment loop.
+     *
      * @param mixed $link
-     * @param mixed $comment
      * @return mixed
      */
-    public static function filterCommentLink($link, $comment)
+    public static function filterCommentLink($link)
     {
-        $postId = 0;
-        if ($comment instanceof \WP_Comment) {
-            $postId = (int) $comment->comment_post_ID;
-        } elseif (is_object($comment) && isset($comment->comment_post_ID)) {
-            $postId = (int) $comment->comment_post_ID;
-        }
+        $comment = get_comment();
+        $postId = $comment instanceof \WP_Comment ? (int) $comment->comment_post_ID : 0;
 
         return $postId > 0 && ! self::shouldDisableForPostId($postId) ? $link : '';
     }
