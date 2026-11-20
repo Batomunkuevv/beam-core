@@ -178,10 +178,6 @@ final class Registrar
 
         $extra = self::names($map[ $post->post_type ]);
 
-        if ($allowed === true || $allowed === null) {
-            return $extra;
-        }
-
         if (! is_array($allowed)) {
             return $allowed;
         }

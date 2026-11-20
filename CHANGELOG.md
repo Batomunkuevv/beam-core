@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.1
+
+- Блоки: папка с `block.json`, но без шаблона (`render.php` или `acf.renderTemplate`), больше не пропускается молча. Ошибка пишется в `error_log`, при `WP_DEBUG` ещё и `_doing_it_wrong`.
+- Блоки: `beam_blocks_allowed` только добавляет блоки к списку темы. Если тема разрешает все блоки, список остаётся полным, стандартные блоки WordPress не пропадают.
+- Блоки: `beam_field('name')` возвращает `default_value` из `fields.json`, когда у блока нет сохранённых данных (вставка из кода, паттерн, `beam_render_block()` без полей).
+- Блоки: заготовка `wp beam blocks make` и пример в README выводят заголовок как `<p class="block-title">`, а не `<h2>`.
+- Модули по выбору: проверка `seed_opt_in_modules()` выполняется один раз за запрос, запись в базу — один раз за установку.
+
 ## 2.1.0
 
 - Модуль «Блоки»: поиск `blocks/<slug>/` в активной и родительской теме, регистрация через `block.json` (`apiVersion` 3, `renderTemplate`), поля из `fields.json`, превью и тот же шаблон из PHP (`beam_render_block()`).

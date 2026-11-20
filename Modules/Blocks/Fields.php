@@ -6,6 +6,65 @@ defined('ABSPATH') || exit;
 
 final class Fields
 {
+    /** @var array<string, array<string, mixed>> */
+    private static array $defaults = [];
+
+    /** Значение поля текущего блока, а без сохранённых данных — default_value из fields.json. */
+    public static function value(string $field, mixed $fallback = null): mixed
+    {
+        $value = function_exists('get_field') ? get_field($field) : null;
+
+        if ($value !== null) {
+            return $value;
+        }
+
+        $name = Renderer::current();
+
+        if ($name === '') {
+            return $fallback;
+        }
+
+        $defaults = self::defaultsFor($name);
+
+        return array_key_exists($field, $defaults) ? $defaults[ $field ] : $fallback;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function defaultsFor(string $name): array
+    {
+        if (isset(self::$defaults[ $name ])) {
+            return self::$defaults[ $name ];
+        }
+
+        $defaults = [];
+
+        foreach (self::groupsFor($name) as $group) {
+            $fields = function_exists('acf_get_fields') ? acf_get_fields($group) : [];
+
+            if (! is_array($fields)) {
+                continue;
+            }
+
+            foreach ($fields as $field) {
+                if (! is_array($field) || ! isset($field['name'], $field['default_value']) || ! is_string($field['name'])) {
+                    continue;
+                }
+
+                if ($field['name'] === '' || $field['default_value'] === '' || $field['default_value'] === []) {
+                    continue;
+                }
+
+                $defaults[ $field['name'] ] = $field['default_value'];
+            }
+        }
+
+        self::$defaults[ $name ] = $defaults;
+
+        return $defaults;
+    }
+
     /**
      * @param array<string, mixed> $block
      */

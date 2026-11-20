@@ -121,7 +121,7 @@ add_filter('beam_blocks_paths', static function (array $paths): array {
 
 Базовые блоки ядра, когда они появятся, лежат в `Modules/Blocks/blocks/`. Если в теме есть `blocks/<slug>/render.php`, берётся он, как шаблон WooCommerce. Свой `block.json` в теме заменяет блок целиком. Блок, который тема уже зарегистрировала сама, повторно не регистрируется.
 
-Регистрация идёт через `register_block_type()` папки блока. В `block.json`: `apiVersion` 3 и `"acf": {"renderTemplate": "render.php"}`. Гутенберг и вызов из PHP подключают один и тот же `render.php`. В шаблоне есть `$is_preview` и `get_field()`. Отдельный вид блока — отдельная папка со своим слагом, например `faq` и `faq-compact`.
+Регистрация идёт через `register_block_type()` папки блока. В `block.json`: `apiVersion` 3 и `"acf": {"renderTemplate": "render.php"}`. Гутенберг и вызов из PHP подключают один и тот же `render.php`. В шаблоне есть `$is_preview`, `get_field()` и `beam_field()`: он возвращает то же, что `get_field()`, а если у блока нет сохранённых данных (вставка из кода или паттерна) — `default_value` поля из `fields.json`. Папка без шаблона не регистрируется, причина пишется в `error_log`. Отдельный вид блока — отдельная папка со своим слагом, например `faq` и `faq-compact`.
 
 Тот же шаблон можно вывести без блока в контенте:
 
@@ -144,7 +144,7 @@ add_filter('beam_blocks_category', static function (array $category): array {
 });
 ```
 
-Какие блоки доступны в редакторе типа записи, задаёт `beam_blocks_allowed`. В списке могут быть и блоки ядра WordPress, и блоки темы. Если для типа ещё нет своего списка, фильтр его задаёт. Если тема уже вернула массив из `allowed_block_types_all`, списки объединяются.
+Какие блоки доступны в редакторе типа записи, задаёт `beam_blocks_allowed`. В списке могут быть и блоки ядра WordPress, и блоки темы. Фильтр только добавляет блоки: если тема вернула массив из `allowed_block_types_all`, списки объединяются, а если разрешены все блоки, так и остаётся, и стандартные блоки WordPress не пропадают.
 
 ```php
 add_filter('beam_blocks_allowed', static function (array $allowed): array {
@@ -212,11 +212,11 @@ wp beam blocks make hero
 
 defined('ABSPATH') || exit;
 
-$title = function_exists('get_field') ? (string) get_field('title') : '';
+$title = (string) beam_field('title');
 ?>
 <section class="<?= esc_attr('hero') ?>">
 <?php if ($title !== '') : ?>
-    <h2><?= esc_html($title) ?></h2>
+    <p class="block-title"><?= esc_html($title) ?></p>
 <?php endif; ?>
 </section>
 ```

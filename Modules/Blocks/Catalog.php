@@ -181,7 +181,7 @@ final class Catalog
 
             $path = $directory . '/' . $entry;
 
-            if (! is_dir($path) || ! is_file($path . '/block.json') || ! is_file($path . '/render.php')) {
+            if (! is_dir($path) || ! is_file($path . '/block.json')) {
                 continue;
             }
 
@@ -239,6 +239,8 @@ final class Catalog
         $templatePath = self::templatePath($slug, $directory, $relative);
 
         if ($templatePath === '') {
+            self::reportMissingTemplate($name, $directory . '/' . ltrim($relative, '/'));
+
             return null;
         }
 
@@ -253,6 +255,17 @@ final class Catalog
             'templatePath'    => $templatePath,
             'templateSource'  => $templateSource,
         ];
+    }
+
+    private static function reportMissingTemplate(string $name, string $template): void
+    {
+        $message = sprintf('BE.AM Core: блок %s не зарегистрирован, нет шаблона %s.', $name, $template);
+
+        error_log($message); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
+        if (defined('WP_DEBUG') && WP_DEBUG && function_exists('_doing_it_wrong')) {
+            _doing_it_wrong(__CLASS__ . '::blocks', esc_html($message), '2.1.1');
+        }
     }
 
     private static function templatePath(string $slug, string $directory, string $relative): string

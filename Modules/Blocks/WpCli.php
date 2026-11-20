@@ -175,11 +175,11 @@ final class WpCli
 
 defined('ABSPATH') || exit;
 
-$title = function_exists('get_field') ? (string) get_field('title') : '';
+$title = (string) beam_field('title');
 ?>
 <section class="<?= esc_attr('{{slug}}') ?>">
 <?php if ($title !== '') : ?>
-    <h2><?= esc_html($title) ?></h2>
+    <p class="block-title"><?= esc_html($title) ?></p>
 <?php endif; ?>
 </section>
 PHP;

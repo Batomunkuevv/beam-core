@@ -218,6 +218,14 @@ final class ModuleRegistry
 
     public static function seed_opt_in_modules(): void
     {
+        static $checked = false;
+
+        if ($checked) {
+            return;
+        }
+
+        $checked = true;
+
         if (! function_exists('get_option') || ! function_exists('update_option')) {
             return;
         }

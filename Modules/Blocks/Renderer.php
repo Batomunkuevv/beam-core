@@ -6,6 +6,14 @@ defined('ABSPATH') || exit;
 
 final class Renderer
 {
+    /** @var list<string> */
+    private static array $stack = [];
+
+    public static function current(): string
+    {
+        return self::$stack === [] ? '' : self::$stack[ count(self::$stack) - 1 ];
+    }
+
     public static function bridge(): string
     {
         return __DIR__ . '/render-bridge.php';
@@ -50,7 +58,13 @@ final class Renderer
         $render = static function () use ($template, $block, $content, $is_preview, $post_id, $wp_block, $context): void {
             include $template;
         };
-        $render();
+        self::$stack[] = $name;
+
+        try {
+            $render();
+        } finally {
+            array_pop(self::$stack);
+        }
     }
 
     /**
