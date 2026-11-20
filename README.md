@@ -1,6 +1,6 @@
 # BE.AM Core
 
-Инфраструктурные модули для WordPress: SMTP, безопасность, фавиконка, поля, SVG и другие. Каждый модуль можно включить отдельно: **Настройки → BE.AM Core**.
+Инфраструктурные модули для WordPress: SMTP, безопасность, фавиконка, блоки, поля, SVG и другие. Каждый модуль можно включить отдельно: **Настройки → BE.AM Core**.
 
 Требуется PHP 8.1 и WordPress 6.4+.
 
@@ -60,6 +60,7 @@ WordPress подключает только PHP-файлы из корня `mu-p
 - **SVG** — загрузка SVG в медиабиблиотеку: файл очищается при загрузке, в библиотеке есть превью.
 - **Favicon** — загрузка SVG или PNG, генерация размеров, манифест и theme-color.
 - **Безопасность** — отключение редактора файлов, скрытие логинов и адреса входа, проверка XML-RPC и лимита попыток входа.
+- **Блоки** — регистрация блоков из папки `blocks/` темы: шаблон, поля и превью. Выключен по умолчанию. Пока блоков нет, категория, список разрешённых блоков и ассеты не добавляются.
 
 Отключённые модули не подключают свои хуки. Жёстко убрать модуль из списка (в админке его не будет):
 
@@ -94,8 +95,159 @@ add_filter(
 - `beam_security_log_login_failures` — `false`, чтобы не писать неудачные входы в syslog.
 - `beam_security_client_ip` — IP клиента для журнала неудачных входов. По умолчанию `REMOTE_ADDR`; заголовкам вроде `X-Forwarded-For` модуль не доверяет.
 - `beam_disable_comments_excluded_post_types` — типы записей, у которых комментарии остаются включёнными. По умолчанию `product`, если активен WooCommerce (или зарегистрирован этот тип) и отзывы включены (`woocommerce_enable_reviews` = `yes`).
+- `beam_blocks_paths` — каталоги, в которых ищутся блоки. Поздний путь перекрывает ранний с тем же слагом.
+- `beam_blocks_category` — название и иконка категории «Блоки сайта».
+- `beam_blocks_allowed` — разрешённые блоки по типам записей.
+- `beam_block_assets` — стили и скрипты блока вместо файлов из папки.
 
 Тема или mu-plugin сайта передают свои значения через эти фильтры. В самом пакете нет привязки к конкретному проекту.
+
+## Блоки
+
+Модуль выключен по умолчанию. На существующем сайте его нужно включить: **Настройки → BE.AM Core → Модули → Блоки → Сохранить**. Пока модуль выключен или в теме нет папки `blocks/` (и фильтр `beam_blocks_paths` не добавил свой каталог), ничего не меняется: нет новой категории, нет фильтра разрешённых блоков и нет ассетов.
+
+Блоки живут в теме. Ядро только находит папки, регистрирует их и даёт общие функции. Ищутся `blocks/<slug>/` активной темы и, если это дочерняя тема, родительской. В каждой папке нужны `block.json` и `render.php`. По желанию рядом лежат `style.css`, `script.js` и `fields.json`. Свой список каталогов — фильтр `beam_blocks_paths`: более поздний путь перекрывает более ранний с тем же слагом.
+
+```php
+add_filter('beam_blocks_paths', static function (array $paths): array {
+    $paths[] = [
+        'path'   => get_stylesheet_directory() . '/template-parts/blocks',
+        'source' => 'theme',
+    ];
+
+    return $paths;
+});
+```
+
+Базовые блоки ядра, когда они появятся, лежат в `Modules/Blocks/blocks/`. Если в теме есть `blocks/<slug>/render.php`, берётся он, как шаблон WooCommerce. Свой `block.json` в теме заменяет блок целиком. Блок, который тема уже зарегистрировала сама, повторно не регистрируется.
+
+Регистрация идёт через `register_block_type()` папки блока. В `block.json`: `apiVersion` 3 и `"acf": {"renderTemplate": "render.php"}`. Гутенберг и вызов из PHP подключают один и тот же `render.php`. В шаблоне есть `$is_preview` и `get_field()`. Отдельный вид блока — отдельная папка со своим слагом, например `faq` и `faq-compact`.
+
+Тот же шаблон можно вывести без блока в контенте:
+
+```php
+if (function_exists('beam_render_block')) {
+    beam_render_block('hero', [
+        'title' => get_field('hero_title'),
+    ]);
+}
+```
+
+В редакторе блоки попадают в категорию «Блоки сайта» (слаг `beam-blocks`). Название и иконка меняются фильтром:
+
+```php
+add_filter('beam_blocks_category', static function (array $category): array {
+    $category['title'] = 'Блоки сайта';
+    $category['icon'] = 'layout';
+
+    return $category;
+});
+```
+
+Какие блоки доступны в редакторе типа записи, задаёт `beam_blocks_allowed`. В списке могут быть и блоки ядра WordPress, и блоки темы. Если для типа ещё нет своего списка, фильтр его задаёт. Если тема уже вернула массив из `allowed_block_types_all`, списки объединяются.
+
+```php
+add_filter('beam_blocks_allowed', static function (array $allowed): array {
+    $allowed['page'] = ['acf/hero', 'core/paragraph', 'core/heading'];
+    $allowed['post'] = ['acf/hero', 'core/paragraph'];
+
+    return $allowed;
+});
+```
+
+Поля блока — `fields.json` в папке блока, формат acf-json, location `block == acf/<slug>`. Группа подключается через `acf_add_local_field_group`. Тот же `key`, уже загруженный из общего `acf-json` темы, второй раз не добавляется.
+
+Стили и скрипты берутся из `block.json`. Если их там нет, `style.css` подключается как `style`, а `script.js` как `viewScript` (только на сайте). Свои файлы, например из сборки Vite, отдаёт фильтр `beam_block_assets`. Верните тот же массив: строка `file:./…`, зарегистрированный хендл, URL или `false`, чтобы убрать ассет.
+
+```php
+add_filter('beam_block_assets', static function (array $assets, array $block): array {
+    if ($block['slug'] !== 'hero') {
+        return $assets;
+    }
+
+    $assets['style'] = get_theme_file_uri('assets/dist/hero.css');
+    $assets['viewScript'] = get_theme_file_uri('assets/dist/hero.js');
+
+    return $assets;
+}, 10, 2);
+```
+
+В режиме preview рисуется тот же `render.php`, в нём `$is_preview` равен true. Если обязательное поле верхнего уровня пустое, вместо блока показывается заглушка.
+
+Команды, когда модуль включён:
+
+```bash
+wp beam blocks list
+wp beam blocks make hero
+```
+
+`list` показывает слаг, источник (`ядро` или `тема`), откуда взят шаблон и путь. `make` создаёт `blocks/<slug>/` в активной теме: `block.json`, `render.php`, `fields.json`.
+
+Пример блока `blocks/hero/block.json`:
+
+```json
+{
+  "apiVersion": 3,
+  "name": "acf/hero",
+  "title": "Hero",
+  "category": "beam-blocks",
+  "icon": "layout",
+  "acf": {
+    "mode": "preview",
+    "renderTemplate": "render.php",
+    "blockVersion": 3
+  },
+  "supports": {
+    "anchor": true,
+    "align": false,
+    "jsx": true
+  }
+}
+```
+
+`blocks/hero/render.php`:
+
+```php
+<?php
+
+defined('ABSPATH') || exit;
+
+$title = function_exists('get_field') ? (string) get_field('title') : '';
+?>
+<section class="<?= esc_attr('hero') ?>">
+<?php if ($title !== '') : ?>
+    <h2><?= esc_html($title) ?></h2>
+<?php endif; ?>
+</section>
+```
+
+`blocks/hero/fields.json`:
+
+```json
+{
+  "key": "group_beam_hero",
+  "title": "Hero",
+  "fields": [
+    {
+      "key": "field_beam_hero_title",
+      "label": "Заголовок",
+      "name": "title",
+      "type": "text",
+      "required": 1
+    }
+  ],
+  "location": [
+    [
+      {
+        "param": "block",
+        "operator": "==",
+        "value": "acf/hero"
+      }
+    ]
+  ],
+  "active": true
+}
+```
 
 ## SMTP
 

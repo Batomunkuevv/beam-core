@@ -18,6 +18,10 @@ final class ModuleRegistry
 {
     public const OPTION_DISABLED = 'beam_core_disabled_modules';
 
+    private const OPT_IN_SEEDED = 'beam_core_opt_in_seeded';
+
+    private const OPT_IN_MODULES = ['blocks'];
+
     /**
      * @return ModuleDefinitions
      */
@@ -86,6 +90,13 @@ final class ModuleRegistry
                 'class'       => \Beam\Core\Modules\Security\Module::class,
                 'description' => 'Отключение редактора файлов, скрытие логинов и адреса входа, проверка XML-RPC и лимита попыток входа.',
                 'has_settings' => true,
+            ],
+            'blocks'          => [
+                'label'        => 'Блоки',
+                'tab'          => 'blocks',
+                'class'        => \Beam\Core\Modules\Blocks\Module::class,
+                'description'  => 'Блоки темы из папки blocks: регистрация, поля и превью.',
+                'has_settings' => false,
             ],
         ];
 
@@ -203,6 +214,54 @@ final class ModuleRegistry
         );
 
         update_option(self::OPTION_DISABLED, $disabled, false);
+    }
+
+    public static function seed_opt_in_modules(): void
+    {
+        if (! function_exists('get_option') || ! function_exists('update_option')) {
+            return;
+        }
+
+        if (function_exists('wp_installing') && wp_installing()) {
+            return;
+        }
+
+        $seeded = get_option(self::OPT_IN_SEEDED, []);
+
+        if (! is_array($seeded)) {
+            $seeded = [];
+        }
+
+        $pending = array_values(array_diff(self::OPT_IN_MODULES, $seeded));
+
+        if ($pending === []) {
+            return;
+        }
+
+        $disabled = get_option(self::OPTION_DISABLED, []);
+
+        if (! is_array($disabled)) {
+            $disabled = [];
+        }
+
+        $changed = false;
+
+        foreach ($pending as $key) {
+            if (! in_array($key, $disabled, true)) {
+                $disabled[] = $key;
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            update_option(self::OPTION_DISABLED, array_values($disabled), false);
+        }
+
+        update_option(
+            self::OPT_IN_SEEDED,
+            array_values(array_unique(array_merge($seeded, self::OPT_IN_MODULES))),
+            true,
+        );
     }
 
     /**
