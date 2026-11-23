@@ -168,6 +168,12 @@ final class SettingsPage
 
             return;
         }
+
+        if ('bitrix24' === $tab && class_exists(\Beam\Core\Modules\Bitrix24\SettingsPage::class)) {
+            \Beam\Core\Modules\Bitrix24\SettingsPage::render();
+
+            return;
+        }
     }
 
     private static function render_modules_tab(): void
@@ -291,6 +297,7 @@ final class SettingsPage
         require_once BEAM_CORE_DIR . '/Modules/Security/XmlrpcStatus.php';
         require_once BEAM_CORE_DIR . '/Modules/Security/LoginLimitStatus.php';
         require_once BEAM_CORE_DIR . '/Modules/Security/SettingsPage.php';
+        \Beam\Core\Modules\Bitrix24\Module::load();
     }
 
     private static function register_module_handlers(): void
@@ -309,6 +316,10 @@ final class SettingsPage
 
         if (ModuleRegistry::is_enabled('security') && class_exists(\Beam\Core\Modules\Security\SettingsPage::class)) {
             \Beam\Core\Modules\Security\SettingsPage::register_handlers();
+        }
+
+        if (ModuleRegistry::is_enabled('bitrix24') && class_exists(\Beam\Core\Modules\Bitrix24\SettingsPage::class)) {
+            \Beam\Core\Modules\Bitrix24\SettingsPage::register_handlers();
         }
     }
 

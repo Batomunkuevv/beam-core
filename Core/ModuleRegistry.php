@@ -20,7 +20,7 @@ final class ModuleRegistry
 
     private const OPT_IN_SEEDED = 'beam_core_opt_in_seeded';
 
-    private const OPT_IN_MODULES = ['blocks'];
+    private const OPT_IN_MODULES = ['blocks', 'bitrix24'];
 
     /**
      * @return ModuleDefinitions
@@ -97,6 +97,13 @@ final class ModuleRegistry
                 'class'        => \Beam\Core\Modules\Blocks\Module::class,
                 'description'  => 'Блоки темы из папки blocks: регистрация, поля и превью.',
                 'has_settings' => false,
+            ],
+            'bitrix24'        => [
+                'label'        => 'Битрикс24',
+                'tab'          => 'bitrix24',
+                'class'        => \Beam\Core\Modules\Bitrix24\Module::class,
+                'description'  => 'Заявки с сайта уходят лидами в Битрикс24 через входящий вебхук.',
+                'has_settings' => true,
             ],
         ];
 

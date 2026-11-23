@@ -2,8 +2,8 @@
 
 /**
  * Plugin Name: BE.AM Core
- * Description: Инфраструктурные модули BE.AM для WordPress: SMTP, безопасность, фавиконка, блоки, поля, SVG и другие.
- * Version: 2.1.1
+ * Description: Инфраструктурные модули BE.AM для WordPress: SMTP, безопасность, фавиконка, блоки, Битрикс24, поля, SVG и другие.
+ * Version: 2.2.0
  * Author: BE.AM
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,7 +18,7 @@ if (defined('BEAM_CORE_LOADED')) {
 }
 
 define('BEAM_CORE_LOADED', true);
-define('BEAM_CORE_VERSION', '2.1.1');
+define('BEAM_CORE_VERSION', '2.2.0');
 define('BEAM_CORE_FILE', __FILE__);
 define('BEAM_CORE_DIR', __DIR__);
 define('BEAM_CORE_MU_DIR', dirname(__DIR__));
@@ -40,6 +40,7 @@ require_once BEAM_CORE_DIR . '/Modules/SvgUpload/Module.php';
 require_once BEAM_CORE_DIR . '/Modules/Favicon/Module.php';
 require_once BEAM_CORE_DIR . '/Modules/Security/Module.php';
 require_once BEAM_CORE_DIR . '/Modules/Blocks/Module.php';
+require_once BEAM_CORE_DIR . '/Modules/Bitrix24/Module.php';
 
 Beam\Core\Modules\Security\Module::bootstrap();
 Beam\Core\Fields::register();
