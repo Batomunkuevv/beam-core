@@ -134,21 +134,21 @@ final class Fields
         if (array_is_list($decoded)) {
             foreach ($decoded as $group) {
                 if (is_array($group)) {
-                    self::addGroup($group, $path, $block);
+                    self::addGroup($group, $block);
                 }
             }
 
             return;
         }
 
-        self::addGroup($decoded, $path, $block);
+        self::addGroup($decoded, $block);
     }
 
     /**
      * @param array<string, mixed> $group
      * @param array<string, mixed> $block
      */
-    private static function addGroup(array $group, string $path, array $block): void
+    private static function addGroup(array $group, array $block): void
     {
         $machine = str_replace('-', '_', (string) $block['slug']);
 
@@ -184,8 +184,7 @@ final class Fields
             $group['active'] = true;
         }
 
-        $group['local'] = 'json';
-        $group['local_file'] = wp_normalize_path($path);
+        $group['local'] = 'php';
 
         acf_add_local_field_group($group);
     }
